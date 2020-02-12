@@ -4,11 +4,13 @@ using UnityEngine;
 public class BridgeBuilderMod : FortressCraftMod
 {
 	public ushort MyCubeType = ModManager.mModMappings.CubesByKey["iranite.BridgeBuilderCube"].CubeType;
+	public ushort MyCubeType2 = ModManager.mModMappings.CubesByKey["iranite.SuperBridgeBuilderCube"].CubeType;
 	public override ModRegistrationData Register()
 	{
 		ModRegistrationData modRegistrationData = new ModRegistrationData();
 		modRegistrationData.RegisterEntityHandler("iranite.BridgeBuilderCube");
-		Debug.Log("Bridge Builder no. 1");
+		modRegistrationData.RegisterEntityHandler("iranite.SuperBridgeBuilderCube");
+		Debug.Log("Bridge Builder no. 2");
 
 		//UIManager.NetworkCommandFunctions.Add("iranite.BridgeBuilderInterface", new UIManager.HandleNetworkCommand(BridgeBuilderWindow.HandleNetworkCommand));
 
@@ -24,6 +26,11 @@ public class BridgeBuilderMod : FortressCraftMod
 		{
 			parameters.ObjectType = SpawnableObjectEnum.AutoBuilder;
 			result.Entity = new BridgeBuilder(parameters.Segment, parameters.X, parameters.Y, parameters.Z, parameters.Cube, parameters.Flags, parameters.Value);
+		}
+		else if (parameters.Cube == MyCubeType2)
+		{
+			parameters.ObjectType = SpawnableObjectEnum.AutoBuilder;
+			result.Entity = new SuperBridgeBuilder(parameters.Segment, parameters.X, parameters.Y, parameters.Z, parameters.Cube, parameters.Flags, parameters.Value);
 		}
 		return result;
 	}

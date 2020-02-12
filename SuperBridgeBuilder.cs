@@ -4,7 +4,7 @@ using UnityEngine;
 
 
 
-public class BridgeBuilder : MachineEntity, PowerConsumerInterface
+public class SuperBridgeBuilder : MachineEntity, PowerConsumerInterface
 {
 	public bool Active;
 
@@ -12,13 +12,13 @@ public class BridgeBuilder : MachineEntity, PowerConsumerInterface
 	public float mrNormalisedPower;
 	public float mrPowerSpareCapacity;
 	public float PowerPerBuild = 8;
-	public float mrStartMax = 64;
+	public int mnMaxSearchDistance = 1024;
+	public float mrStartMax = 128;
 	public float mrMaxPower = 64;
-	public int mnMaxSearchDistance = 512;
 	public int mnTimeSinceBuild = 0;
 	public int BridgeCubeType = 126; // Reinforced Concrete wall
-	public int[] GarbageCubes = { 21,68,200,12,16,4,2,3,7,13,24, 199, 87, 17 }; 
-	public int GarbageAmount = 8;
+	public int[] GarbageCubes = { 21, 68, 200, 12, 16, 4, 2, 3, 7, 13, 24, 199, 87, 17 };
+	public int GarbageAmount = 1;
 
 	Vector3 mUp;
 	Vector3 mForwards;
@@ -50,7 +50,7 @@ public class BridgeBuilder : MachineEntity, PowerConsumerInterface
 	public bool Blocked;
 
 	// ************************************************************************************************************************************************
-	public BridgeBuilder(Segment segment, long x, long y, long z, ushort cube, byte flags, ushort lValue) : base(eSegmentEntity.Mod, SpawnableObjectEnum.AutoBuilder, x, y, z, cube, flags, lValue, Vector3.zero, segment)
+	public SuperBridgeBuilder(Segment segment, long x, long y, long z, ushort cube, byte flags, ushort lValue) : base(eSegmentEntity.Mod, SpawnableObjectEnum.AutoBuilder, x, y, z, cube, flags, lValue, Vector3.zero, segment)
 	{
 		mbNeedsLowFrequencyUpdate = true;
 		mbNeedsUnityUpdate = true;
@@ -138,8 +138,8 @@ public class BridgeBuilder : MachineEntity, PowerConsumerInterface
 				return;
 			}
 			mbHasHopper = true;
-		// {200, 639 }, { 200, 1782 }
-		foreach (int GarbageType in GarbageCubes)
+			// {200, 639 }, { 200, 1782 }
+			foreach (int GarbageType in GarbageCubes)
 			{
 				if (lHopper.CountCubes((ushort)GarbageType, TerrainData.GetDefaultValue((ushort)GarbageType)) >= GarbageAmount)
 				{
@@ -263,7 +263,7 @@ public class BridgeBuilder : MachineEntity, PowerConsumerInterface
 			Blocked = false;
 		}
 		else if (lCube > 1)
-		{ 
+		{
 			// we encountered 'a thing', stop building.
 			Blocked = true;
 			mnSearchDistance = 0; // SIGNAL AND TRY AGAIN
