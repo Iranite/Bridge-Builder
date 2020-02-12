@@ -12,13 +12,13 @@ public class BridgeBuilder : MachineEntity, PowerConsumerInterface
 	public float mrNormalisedPower;
 	public float mrPowerSpareCapacity;
 	public float PowerPerBuild = 8;
-	public float mrStartMax = 64;
-	public float mrMaxPower = 64;
-	public int mnMaxSearchDistance = 512;
+	public int mnMaxSearchDistance = 1024;
+	public float mrStartMax = 64; //128 for Super
+	public float mrMaxPower;
 	public int mnTimeSinceBuild = 0;
 	public int BridgeCubeType = 126; // Reinforced Concrete wall
-	public int[] GarbageCubes = { 21,68,200,12,16,4,2,3,7,13,24, 199, 87, 17 }; 
-	public int GarbageAmount = 8;
+	public int[] GarbageCubes = { 21, 68, 200, 12, 16, 4, 2, 3, 7, 13, 24, 199, 87, 17 };
+	public int GarbageAmount = 8;  //1 for Super
 
 	Vector3 mUp;
 	Vector3 mForwards;
@@ -65,10 +65,8 @@ public class BridgeBuilder : MachineEntity, PowerConsumerInterface
 
 		meCarriedObject = eCarriedObject.eNone;
 		mePreviousCarriedObject = meCarriedObject;
-
+		mrMaxPower = mrStartMax;
 		mFlags = flags;
-
-		mrMaxPower = PowerPerBuild + mnMaxSearchDistance; 
 
 
 	}
@@ -138,8 +136,8 @@ public class BridgeBuilder : MachineEntity, PowerConsumerInterface
 				return;
 			}
 			mbHasHopper = true;
-		// {200, 639 }, { 200, 1782 }
-		foreach (int GarbageType in GarbageCubes)
+			// {200, 639 }, { 200, 1782 }
+			foreach (int GarbageType in GarbageCubes)
 			{
 				if (lHopper.CountCubes((ushort)GarbageType, TerrainData.GetDefaultValue((ushort)GarbageType)) >= GarbageAmount)
 				{
@@ -180,9 +178,8 @@ public class BridgeBuilder : MachineEntity, PowerConsumerInterface
 		{
 			if (mrCurrentPower >= PowerPerBuild + mnSearchDistance)
 			{
-				mrCurrentPower -= PowerPerBuild + mnSearchDistance;
-				mrMaxPower = mrStartMax + mnSearchDistance;
 				UpdateSearch();
+				mrMaxPower = mrStartMax + mnSearchDistance;
 				mnBuildDelay = 3;//~1s
 			}
 		}
@@ -260,19 +257,21 @@ public class BridgeBuilder : MachineEntity, PowerConsumerInterface
 		if (lCube == BridgeCubeType)
 		{
 			mnSearchDistance++;// skip over this one, it was already built
+			mrCurrentPower -= (float)Math.Sqrt(mnSearchDistance); //searching costs power
 			Blocked = false;
 		}
 		else if (lCube > 1)
-		{ 
+		{
 			// we encountered 'a thing', stop building.
 			Blocked = true;
-			mnSearchDistance = 0; // SIGNAL AND TRY AGAIN
+			mnSearchDistance = 1; // SIGNAL AND TRY AGAIN
 			mePreviousCarriedObject = eCarriedObject.eNone;
 		}
 		else//It's not an entity, an object, or ore - DIG THROUGH IT (I suspect that might dig through things like minecart rails of other types tho)
 		{
 			// there's no need to build air, the build command will happily swap one voxel type for another, even if there's non air.
 			WorldScript.instance.BuildOrientationFromEntity(checkSegment, checkX, checkY, checkZ, (ushort)BridgeCubeType, (ushort)1092, mFlags); // 1092 dark gray
+			mrCurrentPower -= PowerPerBuild + mnSearchDistance; //building costs more power.
 			mePreviousCarriedObject = meCarriedObject;
 			meCarriedObject = eCarriedObject.eNone;
 			mnSearchDistance++;
@@ -313,7 +312,7 @@ public class BridgeBuilder : MachineEntity, PowerConsumerInterface
 		Vector3 lMov = (lBuilderTarget - Builder.transform.position);
 		if (lMov.sqrMagnitude > 1.0f) lMov.Normalize();
 
-		if (lnBuilderDistance == 0) lMov *= 8.0f;//rewind quickly
+		if (lnBuilderDistance == 1) lMov *= 8.0f;//rewind quickly
 
 		Builder.transform.position += lMov * Time.deltaTime;
 
@@ -420,6 +419,60 @@ public class BridgeBuilder : MachineEntity, PowerConsumerInterface
 	}
 	// ************************************************************************************************************************************************
 
+	//I copied this from the UIManagers and... well, it's very experimental.
+	public override string GetPopupText()
+	{
+		string lStr = "Bridge Builder";//\nPower : " + lStat.mrCurrentPower.ToString("F2") +"/" + lStat.mrMaxPower;
+
+		if (mnSearchDistance == mnMaxSearchDistance)
+		{
+			if (Blocked)
+				lStr += "\n" + "Bridge complete!"; //The other side has been reached (Blocked)
+			else
+				lStr += "\n" + "Build limit reached!";
+		}
+		else
+		{
+
+
+			lStr += "\n" + string.Format(PersistentSettings.GetString("Power_X_X"), mrCurrentPower.ToString("F0"), mrMaxPower.ToString("F0"));
+
+
+			if (mrCurrentPower < PowerPerBuild + mnSearchDistance)
+			{
+				//float lrmissing = PowerPerBuild - mrCurrentPower;
+				//lStr += "\n" + string.Format(PersistentSettings.GetString("UI_Needs_X_more_power"), lrmissing.ToString("F0"));
+				lStr += "\n" + "Needs more Power";
+			}
+
+			//	lStr +=  "\nC:" + meCarriedObject.ToString() +":P"+ mePreviousCarriedObject.ToString();
+			//if (lStat.mrCurrentPower < lStat.mrMaxPower * 0.25f) lStr +=  "\nLow on power!";
+
+			if (mbHasHopper == false)
+			{
+				lStr += "\n" + PersistentSettings.GetString("UI_Looking_valid_hopper");
+			}
+			else if (meCarriedObject == eCarriedObject.eNone && mnTimeSinceBuild > 6)
+			{
+
+
+				lStr += "\n" + "Needs more Garbage";
+
+
+			}
+			else if (mrCurrentPower >= PowerPerBuild + mnSearchDistance)
+			{
+				//Have hopper, am building
+				lStr += "\n    OK!";
+			}
+
+
+			if (Blocked) lStr += "\n" + "Bridge complete!"; //The other side has been reached (Blocked)
+			lStr += "\n" + string.Format(PersistentSettings.GetString("UI_Build_Dist_is_X"), mnSearchDistance);
+
+		}
+		return lStr;
+	}
 
 	//******************** Holobase **********************
 
