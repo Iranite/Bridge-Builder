@@ -10,7 +10,7 @@ public class BridgeBuilderMod : FortressCraftMod
 		ModRegistrationData modRegistrationData = new ModRegistrationData();
 		modRegistrationData.RegisterEntityHandler("iranite.BridgeBuilderCube");
 		modRegistrationData.RegisterEntityHandler("iranite.SuperBridgeBuilderCube");
-		Debug.Log("Bridge Builder no. 3");
+		Debug.Log("Bridge Builder no. 4");
 
 		//UIManager.NetworkCommandFunctions.Add("iranite.BridgeBuilderInterface", new UIManager.HandleNetworkCommand(BridgeBuilderWindow.HandleNetworkCommand));
 
